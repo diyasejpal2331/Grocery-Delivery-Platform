@@ -23,8 +23,11 @@ export const Products: React.FC = () => {
   useEffect(() => {
     setFilters((prev) => ({
       ...prev,
-      category: searchParams.get('category') || prev.category,
-      search: searchParams.get('search') || prev.search,
+      category: searchParams.get('category') || undefined,
+      search: searchParams.get('search') || undefined,
+      minPrice: searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined,
+      maxPrice: searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined,
+      sortBy: (searchParams.get('sortBy') as any) || 'popular',
     }));
   }, [searchParams]);
 

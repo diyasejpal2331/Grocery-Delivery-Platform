@@ -2,20 +2,56 @@ const Product = require("../models/Product");
 // GET ALL PRODUCTS
 const getProducts = async (req, res) => {
     try {
-        const keyword = req.query.keyword;
+        const { keyword, search, category, minPrice, maxPrice, sortBy } = req.query;
+        const searchTerm = keyword || search;
 
-        const filter = keyword
-            ? {
-                name: {
-                    $regex: keyword,
-                    $options: "i"
+        let filter = {};
+
+        if (searchTerm) {
+            filter.name = { $regex: searchTerm, $options: "i" };
+        }
+
+        if (category && category !== "all") {
+            const mongoose = require("mongoose");
+            if (mongoose.Types.ObjectId.isValid(category)) {
+                filter.category = category;
+            } else {
+                const Category = require("../models/Category");
+                const foundCategory = await Category.findOne({
+                    $or: [
+                        { name: { $regex: `^${category}$`, $options: "i" } },
+                        { slug: category.toLowerCase() }
+                    ]
+                });
+
+                if (foundCategory) {
+                    filter.category = foundCategory._id;
+                } else {
+                    filter.category = category;
                 }
             }
-            : {};
+        }
+
+        if (minPrice !== undefined && minPrice !== "") {
+            filter.price = filter.price || {};
+            filter.price.$gte = Number(minPrice);
+        }
+
+        if (maxPrice !== undefined && maxPrice !== "") {
+            filter.price = filter.price || {};
+            filter.price.$lte = Number(maxPrice);
+        }
+
+        let sortOption = { createdAt: -1 };
+        if (sortBy === "price-low") sortOption = { price: 1 };
+        if (sortBy === "price-high") sortOption = { price: -1 };
+        if (sortBy === "rating") sortOption = { rating: -1 };
+        if (sortBy === "popular") sortOption = { numReviews: -1, createdAt: -1 };
 
         const products = await Product
             .find(filter)
-            .populate("category");
+            .populate("category")
+            .sort(sortOption);
 
         res.json(products);
 
