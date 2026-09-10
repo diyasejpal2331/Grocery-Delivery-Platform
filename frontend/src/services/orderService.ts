@@ -87,7 +87,23 @@ export const orderService = {
     totalPrice: number;
   }): Promise<Order> => {
     try {
-      const res = await api.post('/orders', orderData);
+      const payload = {
+        orderItems: orderData.items.map((item) => ({
+          product: item.product._id,
+          name: item.product.name,
+          price: item.product.price,
+          quantity: item.quantity,
+          image: item.product.image,
+        })),
+        items: orderData.items,
+        shippingAddress: orderData.shippingAddress,
+        paymentMethod: orderData.paymentMethod,
+        itemsPrice: orderData.itemsPrice,
+        taxPrice: orderData.taxPrice,
+        shippingPrice: orderData.shippingPrice,
+        totalPrice: orderData.totalPrice,
+      };
+      const res = await api.post('/orders', payload);
       return res.data;
     } catch {
       const newOrder: Order = {

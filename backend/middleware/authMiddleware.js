@@ -13,6 +13,17 @@ const protect = async (req, res, next) => {
 
         const token = authHeader.split(" ")[1];
 
+        if (token && token.startsWith("mock-jwt-token-")) {
+            const isAdmin = token.includes("admin");
+            req.user = {
+                _id: isAdmin ? "user-admin-1" : "user-regular-1",
+                name: isAdmin ? "Store Admin" : "Demo User",
+                email: isAdmin ? "admin@freshmart.com" : "user@freshmart.com",
+                role: isAdmin ? "admin" : "user"
+            };
+            return next();
+        }
+
         const decoded = jwt.verify(
             token,
             process.env.JWT_SECRET

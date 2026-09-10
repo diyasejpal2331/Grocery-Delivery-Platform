@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, Search, MapPin, Mail, Phone, ShoppingCart, User as UserIcon, LogOut, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -9,6 +9,16 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  if (
+    location.pathname.startsWith('/admin') ||
+    location.pathname === '/dashboard' ||
+    location.pathname === '/user/dashboard' ||
+    location.pathname === '/customer/dashboard'
+  ) {
+    return null;
+  }
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModal, setActiveModal] = useState<'about' | 'blog' | 'contact' | null>(null);
@@ -289,6 +299,24 @@ export const Navbar: React.FC = () => {
                     <ShieldCheck size={14} /> Admin
                   </Link>
                 )}
+
+                <Link
+                  to="/dashboard"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    color: 'var(--primary-hover)',
+                    backgroundColor: 'var(--primary-light)',
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: '6px',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <ShoppingBag size={14} /> Dashboard
+                </Link>
 
                 <Link
                   to="/profile"

@@ -145,9 +145,14 @@ export const productService = {
   getProducts: async (params?: ProductFilterParams): Promise<Product[]> => {
     try {
       const res = await api.get('/products', { params });
-      return res.data;
+      const rawProducts: any[] = res.data;
+      return rawProducts.map((p) => ({
+        ...p,
+        category: typeof p.category === 'object' && p.category ? p.category._id : p.category,
+        categoryName: typeof p.category === 'object' && p.category ? p.category.name : (p.categoryName || 'General'),
+      }));
     } catch {
-      // Mock filtering logic
+      // Mock filtering logic fallback for offline dev
       let products = [...MOCK_PRODUCTS];
 
       if (params?.category && params.category !== 'all') {
@@ -188,7 +193,12 @@ export const productService = {
   getProductById: async (id: string): Promise<Product> => {
     try {
       const res = await api.get(`/products/${id}`);
-      return res.data;
+      const p = res.data;
+      return {
+        ...p,
+        category: typeof p.category === 'object' && p.category ? p.category._id : p.category,
+        categoryName: typeof p.category === 'object' && p.category ? p.category.name : p.categoryName,
+      };
     } catch {
       const found = MOCK_PRODUCTS.find((p) => p._id === id);
       if (!found) {
@@ -201,49 +211,92 @@ export const productService = {
   getCategories: async (): Promise<Category[]> => {
     try {
       const res = await api.get('/categories');
-      return res.data;
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+      return INITIAL_CATEGORIES;
     } catch {
       return INITIAL_CATEGORIES;
+    }
+  },
+
+  createCategory: async (categoryData: Partial<Category>): Promise<Category> => {
+    try {
+      const res = await api.post('/categories', categoryData);
+      return res.data;
+    } catch {
+      const newCat: Category = {
+        _id: `cat-${Date.now()}`,
+        name: categoryData.name || 'New Category',
+        slug: categoryData.slug || categoryData.name?.toLowerCase().replace(/\s+/g, '-') || 'new-category',
+        description: categoryData.description || '',
+      };
+      INITIAL_CATEGORIES.push(newCat);
+      return newCat;
     }
   },
 
   createProduct: async (productData: Partial<Product>): Promise<Product> => {
     try {
       const res = await api.post('/products', productData);
-      return res.data;
-    } catch {
-      const newProduct: Product = {
+      const data = res.data;
+      return {
+        ...data,
+        category: typeof data.category === 'object' && data.category ? data.category._id : (data.category || productData.category),
+        categoryName: typeof data.category === 'object' && data.category ? data.category.name : productData.categoryName,
+      };
+    } catch (err) {
+      const newProd: Product = {
         _id: `prod-${Date.now()}`,
-        name: productData.name || 'New Product',
+        name: productData.name || '',
         description: productData.description || '',
-        price: Number(productData.price) || 0,
-        originalPrice: productData.originalPrice ? Number(productData.originalPrice) : undefined,
-        category: productData.category || 'cat-1',
+        price: productData.price || 0,
+        originalPrice: productData.originalPrice,
+        category: productData.category || '',
         categoryName: productData.categoryName || 'General',
         image: productData.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80',
-        stock: Number(productData.stock) || 10,
-        unit: productData.unit || '1 unit',
-        rating: 5.0,
-        numReviews: 1,
-        isOrganic: productData.isOrganic ?? true,
-        isBestSeller: false,
+        stock: productData.stock || 0,
+        unit: productData.unit || '1 kg',
+        isOrganic: productData.isOrganic ?? false,
       };
-      MOCK_PRODUCTS.unshift(newProduct);
-      return newProduct;
+      MOCK_PRODUCTS.unshift(newProd);
+      return newProd;
     }
   },
 
   updateProduct: async (id: string, productData: Partial<Product>): Promise<Product> => {
     try {
       const res = await api.put(`/products/${id}`, productData);
-      return res.data;
-    } catch {
+      const data = res.data;
+      return {
+        ...data,
+        category: typeof data.category === 'object' && data.category ? data.category._id : (data.category || productData.category),
+        categoryName: typeof data.category === 'object' && data.category ? data.category.name : productData.categoryName,
+      };
+    } catch (err) {
       const index = MOCK_PRODUCTS.findIndex((p) => p._id === id);
       if (index !== -1) {
-        MOCK_PRODUCTS[index] = { ...MOCK_PRODUCTS[index], ...productData };
+        MOCK_PRODUCTS[index] = {
+          ...MOCK_PRODUCTS[index],
+          ...productData,
+          category: productData.category || MOCK_PRODUCTS[index].category,
+          categoryName: productData.categoryName || MOCK_PRODUCTS[index].categoryName,
+        };
         return MOCK_PRODUCTS[index];
       }
-      throw new Error('Product not found');
+      return {
+        _id: id,
+        name: productData.name || '',
+        description: productData.description || '',
+        price: productData.price || 0,
+        originalPrice: productData.originalPrice,
+        category: productData.category || '',
+        categoryName: productData.categoryName || 'General',
+        image: productData.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80',
+        stock: productData.stock || 0,
+        unit: productData.unit || '1 kg',
+        isOrganic: productData.isOrganic ?? false,
+      };
     }
   },
 

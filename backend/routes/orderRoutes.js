@@ -4,6 +4,7 @@ const {
     createOrder,
     getMyOrders,
     getAllOrders,
+    getOrderById,
     updateOrderStatus
 } = require("../controllers/orderController");
 
@@ -19,6 +20,8 @@ router.post("/", protect, createOrder);
 router.get("/myorders", protect, getMyOrders);
 
 router.get("/", protect, admin, getAllOrders);
+
+router.get("/:id", protect, getOrderById);
 
 router.put(
     "/:id/status",

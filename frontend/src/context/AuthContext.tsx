@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   loading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
+  login: (credentials: LoginCredentials) => Promise<User>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => void;
   updateUser: (updatedData: Partial<User>) => Promise<void>;
@@ -41,12 +41,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initAuth();
   }, [token]);
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = async (credentials: LoginCredentials): Promise<User> => {
     const res = await authService.login(credentials);
     setToken(res.token);
     setUser(res.user);
     localStorage.setItem('token', res.token);
     localStorage.setItem('user', JSON.stringify(res.user));
+    return res.user;
   };
 
   const register = async (data: RegisterData) => {

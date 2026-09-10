@@ -16,7 +16,7 @@ const generateToken = (id) => {
 // REGISTER
 const registerUser = async (req, res) => {
     try {
-        const { name, email, password, address } = req.body;
+        const { name, email, password, address, phone } = req.body;
 
         if (!name || !email || !password) {
             return res.status(400).json({
@@ -38,16 +38,19 @@ const registerUser = async (req, res) => {
             name,
             email,
             password: hashedPassword,
-            address
+            address: address || "",
+            phone: phone || ""
         });
 
         res.status(201).json({
             message: "Registration successful",
             user: {
+                _id: user._id,
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                phone: user.phone
             },
             token: generateToken(user._id)
         });
@@ -87,10 +90,12 @@ const loginUser = async (req, res) => {
         res.json({
             message: "Login successful",
             user: {
+                _id: user._id,
                 id: user._id,
                 name: user.name,
                 email: user.email,
-                role: user.role
+                role: user.role,
+                phone: user.phone
             },
             token: generateToken(user._id)
         });
@@ -117,6 +122,7 @@ const updateProfile = async (req, res) => {
         user.name = req.body.name || user.name;
         user.email = req.body.email || user.email;
         user.address = req.body.address || user.address;
+        user.phone = req.body.phone || user.phone;
 
         if (req.body.password) {
             user.password = await bcrypt.hash(
@@ -128,13 +134,28 @@ const updateProfile = async (req, res) => {
         const updatedUser = await user.save();
 
         res.json({
+            _id: updatedUser._id,
             id: updatedUser._id,
             name: updatedUser.name,
             email: updatedUser.email,
             address: updatedUser.address,
+            phone: updatedUser.phone,
             role: updatedUser.role
         });
 
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
+
+// GET ALL USERS - ADMIN
+const getUsers = async (req, res) => {
+    try {
+        const users = await User.find({}).select("-password").sort({ createdAt: -1 });
+        res.json(users);
     } catch (error) {
         res.status(500).json({
             message: error.message
@@ -146,5 +167,6 @@ module.exports = {
     registerUser,
     loginUser,
     getProfile,
-    updateProfile
+    updateProfile,
+    getUsers
 };

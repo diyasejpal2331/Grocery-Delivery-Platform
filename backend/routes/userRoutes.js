@@ -4,12 +4,15 @@ const {
     registerUser,
     loginUser,
     getProfile,
-    updateProfile
+    updateProfile,
+    getUsers
 } = require("../controllers/authController");
 
-const { protect } = require("../middleware/authMiddleware");
+const { protect, admin } = require("../middleware/authMiddleware");
 
 const router = express.Router();
+
+router.get("/", protect, admin, getUsers);
 
 router.post("/register", registerUser);
 

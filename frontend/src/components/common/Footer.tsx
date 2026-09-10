@@ -1,8 +1,18 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Phone, Mail, MapPin, ShoppingCart, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
+  const location = useLocation();
+
+  if (
+    location.pathname.startsWith('/admin') ||
+    location.pathname === '/dashboard' ||
+    location.pathname === '/user/dashboard' ||
+    location.pathname === '/customer/dashboard'
+  ) {
+    return null;
+  }
   return (
     <footer
       style={{

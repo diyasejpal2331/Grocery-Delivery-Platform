@@ -57,25 +57,59 @@ const createProduct = async (req, res) => {
             name,
             description,
             price,
+            originalPrice,
             image,
             category,
             stock,
-            unit
+            unit,
+            isOrganic
         } = req.body;
+
+        if (!name || price === undefined || price === null || !category) {
+            return res.status(400).json({
+                message: "Please provide product name, price, and category."
+            });
+        }
+
+        const mongoose = require("mongoose");
+        let categoryId = mongoose.Types.ObjectId.isValid(category) ? category : null;
+
+        if (!categoryId) {
+            const Category = require("../models/Category");
+            const firstCat = await Category.findOne({});
+            if (firstCat) {
+                categoryId = firstCat._id;
+            }
+        }
+
+        if (!categoryId) {
+            return res.status(400).json({
+                message: "A valid category is required."
+            });
+        }
 
         const product = await Product.create({
             name,
-            description,
+            description: description || "",
             price,
-            image,
-            category,
-            stock,
-            unit
+            originalPrice,
+            image: image || "",
+            category: categoryId,
+            stock: stock !== undefined ? stock : 0,
+            unit: unit || "piece",
+            isOrganic: Boolean(isOrganic)
         });
 
-        res.status(201).json(product);
+        const populatedProduct = await Product.findById(product._id).populate("category");
+
+        res.status(201).json(populatedProduct || product);
 
     } catch (error) {
+        if (error.name === "CastError" || error.name === "ValidationError") {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
         res.status(500).json({
             message: error.message
         });
@@ -84,9 +118,16 @@ const createProduct = async (req, res) => {
 // UPDATE PRODUCT - ADMIN
 const updateProduct = async (req, res) => {
     try {
-        const product = await Product.findById(
-            req.params.id
-        );
+        const { id } = req.params;
+        const mongoose = require("mongoose");
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(404).json({
+                message: "Product not found"
+            });
+        }
+
+        const product = await Product.findById(id);
 
         if (!product) {
             return res.status(404).json({
@@ -94,13 +135,24 @@ const updateProduct = async (req, res) => {
             });
         }
 
-        Object.assign(product, req.body);
+        const updateData = { ...req.body };
+        if (updateData.category && !mongoose.Types.ObjectId.isValid(updateData.category)) {
+            delete updateData.category;
+        }
+
+        Object.assign(product, updateData);
 
         const updatedProduct = await product.save();
+        const populatedProduct = await Product.findById(updatedProduct._id).populate("category");
 
-        res.json(updatedProduct);
+        res.json(populatedProduct || updatedProduct);
 
     } catch (error) {
+        if (error.name === "CastError" || error.name === "ValidationError") {
+            return res.status(400).json({
+                message: error.message
+            });
+        }
         res.status(500).json({
             message: error.message
         });

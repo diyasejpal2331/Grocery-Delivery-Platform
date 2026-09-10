@@ -25,8 +25,25 @@ export const Login: React.FC = () => {
     setSubmitting(true);
 
     try {
-      await login({ email, password });
-      navigate(from, { replace: true });
+      const loggedInUser = await login({ email, password });
+      const isAdminUser = loggedInUser?.role === 'admin';
+
+      if (from && from !== '/' && from !== '/login') {
+        if (isAdminUser && from.startsWith('/admin')) {
+          navigate(from, { replace: true });
+          return;
+        }
+        if (!isAdminUser && !from.startsWith('/admin')) {
+          navigate(from, { replace: true });
+          return;
+        }
+      }
+
+      if (isAdminUser) {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     } catch (err: any) {
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {

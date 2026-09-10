@@ -15,16 +15,39 @@ const getCategories = async (req, res) => {
 // CREATE CATEGORY
 const createCategory = async (req, res) => {
     try {
-        const { name, image } = req.body;
+        const { name, image, description, slug } = req.body;
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({
+                message: "Category name is required"
+            });
+        }
+
+        const trimmedName = name.trim();
+        const generatedSlug = slug || trimmedName.toLowerCase().replace(/\s+/g, "-");
+
+        const existing = await Category.findOne({ name: { $regex: new RegExp(`^${trimmedName}$`, "i") } });
+        if (existing) {
+            return res.status(400).json({
+                message: "Category with this name already exists"
+            });
+        }
 
         const category = await Category.create({
-            name,
-            image
+            name: trimmedName,
+            slug: generatedSlug,
+            description: description || "",
+            image: image || ""
         });
 
         res.status(201).json(category);
 
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(400).json({
+                message: "Category with this name already exists"
+            });
+        }
         res.status(500).json({
             message: error.message
         });

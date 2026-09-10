@@ -95,4 +95,16 @@ export const authService = {
       return updated;
     }
   },
+
+  getUsers: async (): Promise<User[]> => {
+    try {
+      const res = await api.get('/users');
+      if (Array.isArray(res.data) && res.data.length > 0) {
+        return res.data;
+      }
+      return [MOCK_ADMIN_USER, MOCK_REGULAR_USER];
+    } catch {
+      return [MOCK_ADMIN_USER, MOCK_REGULAR_USER];
+    }
+  },
 };

@@ -19,6 +19,10 @@ const productSchema = new mongoose.Schema(
             min: 0
         },
 
+        originalPrice: {
+            type: Number
+        },
+
         image: {
             type: String,
             default: ""
@@ -38,6 +42,11 @@ const productSchema = new mongoose.Schema(
         unit: {
             type: String,
             default: "piece"
+        },
+
+        isOrganic: {
+            type: Boolean,
+            default: false
         }
     },
     {

@@ -11,8 +11,7 @@ const orderSchema = new mongoose.Schema(
         orderItems: [
             {
                 product: {
-                    type: mongoose.Schema.Types.ObjectId,
-                    ref: "Product",
+                    type: mongoose.Schema.Types.Mixed,
                     required: true
                 },
 
@@ -38,20 +37,14 @@ const orderSchema = new mongoose.Schema(
         ],
 
         shippingAddress: {
-            address: {
-                type: String,
-                required: true
-            },
-
-            city: {
-                type: String,
-                required: true
-            },
-
-            postalCode: {
-                type: String,
-                required: true
-            }
+            fullName: { type: String, default: "" },
+            phone: { type: String, default: "" },
+            street: { type: String, default: "" },
+            address: { type: String, default: "" },
+            city: { type: String, default: "" },
+            state: { type: String, default: "" },
+            pincode: { type: String, default: "" },
+            postalCode: { type: String, default: "" }
         },
 
         paymentMethod: {
@@ -89,15 +82,13 @@ const orderSchema = new mongoose.Schema(
             type: Date
         },
 
+        status: {
+            type: String,
+            default: "Processing"
+        },
+
         orderStatus: {
             type: String,
-            enum: [
-                "Processing",
-                "Confirmed",
-                "Shipped",
-                "Delivered",
-                "Cancelled"
-            ],
             default: "Processing"
         }
     },

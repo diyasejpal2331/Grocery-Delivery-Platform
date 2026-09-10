@@ -15,6 +15,7 @@ import { Checkout } from './pages/Checkout';
 import { Orders } from './pages/Orders';
 import { OrderDetails } from './pages/OrderDetails';
 import { Profile } from './pages/Profile';
+import { UserDashboard } from './pages/UserDashboard';
 
 // Admin Pages
 import { Dashboard as AdminDashboard } from './pages/admin/Dashboard';
@@ -41,11 +42,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // Admin Route Wrapper
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) return null;
 
-  if (!isAuthenticated || !isAdmin) {
-    return <Navigate to="/" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -97,6 +103,30 @@ export const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/user/dashboard"
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/customer/dashboard"
+              element={
+                <ProtectedRoute>
+                  <UserDashboard />
                 </ProtectedRoute>
               }
             />
