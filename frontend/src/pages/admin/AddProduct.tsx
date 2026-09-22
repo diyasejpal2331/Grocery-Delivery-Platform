@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Save, Leaf, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Save, Leaf, Upload, Image as ImageIcon, Trash2, RefreshCw, Link as LinkIcon, Check } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
-import { productService, INITIAL_CATEGORIES } from '../../services/productService';
+import { productService } from '../../services/productService';
+import { uploadService } from '../../services/uploadService';
+import { getImageUrl } from '../../utils/imageUtils';
 import { Category } from '../../types/Product';
 
 export const AddProduct: React.FC = () => {
@@ -10,13 +12,18 @@ export const AddProduct: React.FC = () => {
   const [searchParams] = useSearchParams();
   const productId = searchParams.get('id');
 
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [originalPrice, setOriginalPrice] = useState('');
   const [category, setCategory] = useState('');
   const [image, setImage] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [showUrlOption, setShowUrlOption] = useState(false);
   const [stock, setStock] = useState('50');
   const [unit, setUnit] = useState('1 kg');
   const [isOrganic, setIsOrganic] = useState(true);
@@ -51,46 +58,133 @@ export const AddProduct: React.FC = () => {
     initForm();
   }, [productId]);
 
+  useEffect(() => {
+    if (!selectedFile) {
+      setFilePreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setFilePreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setErrorMsg(null);
+
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    const validExts = /\.(jpg|jpeg|png|webp)$/i;
+
+    if (!validTypes.includes(file.type.toLowerCase()) && !validExts.test(file.name)) {
+      setErrorMsg('Please select a JPG, JPEG, PNG, or WEBP image.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMsg('Image size must be less than 5 MB.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    setImage('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    const trimmedName = name.trim();
+    if (!trimmedName || trimmedName.length < 2 || !/[a-zA-Z]/.test(trimmedName)) {
+      setErrorMsg('Product name must contain letters and be at least 2 characters long.');
+      return;
+    }
 
     if (!category) {
       setErrorMsg('Please select a category.');
       return;
     }
 
+    const numPrice = Number(price);
+    if (isNaN(numPrice) || numPrice <= 0) {
+      setErrorMsg('Price must be a valid number greater than ₹0.');
+      return;
+    }
+
+    if (originalPrice) {
+      const numOriginal = Number(originalPrice);
+      if (isNaN(numOriginal) || numOriginal < numPrice) {
+        setErrorMsg('Original price (MRP) cannot be less than selling price.');
+        return;
+      }
+    }
+
+    const numStock = Number(stock);
+    if (isNaN(numStock) || numStock < 0) {
+      setErrorMsg('Stock quantity cannot be negative.');
+      return;
+    }
+
+    if (!unit.trim()) {
+      setErrorMsg('Please specify unit measurement (e.g. 1 kg, 500 ml, 1 pack).');
+      return;
+    }
+
+    let finalImageUrl = image;
+
     setSubmitting(true);
 
-    const selectedCat = categories.find((c) => c._id === category || c.name === category);
-
-    const productPayload = {
-      name,
-      description,
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : undefined,
-      category,
-      categoryName: selectedCat?.name || 'Produce',
-      image: image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80',
-      stock: Number(stock),
-      unit,
-      isOrganic,
-    };
-
     try {
+      if (selectedFile) {
+        finalImageUrl = await uploadService.uploadImage(selectedFile);
+      }
+
+      if (!finalImageUrl) {
+        setErrorMsg('Please select a product image.');
+        setSubmitting(false);
+        return;
+      }
+
+      const selectedCat = categories.find((c) => c._id === category || c.name === category);
+
+      const productPayload = {
+        name,
+        description,
+        price: Number(price),
+        originalPrice: originalPrice ? Number(originalPrice) : undefined,
+        category,
+        categoryName: selectedCat?.name || 'Produce',
+        image: finalImageUrl,
+        stock: Number(stock),
+        unit,
+        isOrganic,
+      };
+
       if (productId) {
         await productService.updateProduct(productId, productPayload);
       } else {
         await productService.createProduct(productPayload);
       }
+
       navigate('/admin/products');
     } catch (err: any) {
       console.error('Failed to save product:', err);
-      setErrorMsg(err.message || 'Failed to save product to database.');
+      setErrorMsg(err.message || 'Product could not be created. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
+
+  const displayPreviewSrc = filePreview || (image ? getImageUrl(image) : null);
 
   return (
     <AdminLayout
@@ -228,15 +322,178 @@ export const AddProduct: React.FC = () => {
               />
             </div>
 
+            {/* PRODUCT IMAGE UPLOAD & PREVIEW AREA */}
             <div className="form-group">
-              <label>Image URL</label>
+              <label style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--secondary)', display: 'block', marginBottom: '0.4rem' }}>
+                Product Image *
+              </label>
+
               <input
-                type="url"
-                placeholder="https://images.unsplash.com/..."
-                value={image}
-                onChange={(e) => setImage(e.target.value)}
-                className="form-control"
+                type="file"
+                ref={fileInputRef}
+                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+                style={{ display: 'none' }}
               />
+
+              {displayPreviewSrc ? (
+                <div
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '14px',
+                    border: '1.5px solid var(--border)',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.5rem',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '12px',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid var(--border)',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <img
+                      src={displayPreviewSrc}
+                      alt="Product Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: '180px' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Product Image Preview
+                    </span>
+                    <strong style={{ display: 'block', fontSize: '0.95rem', color: 'var(--secondary)', margin: '0.2rem 0' }}>
+                      {selectedFile ? selectedFile.name : image ? image.split('/').pop() : 'Product Image'}
+                    </strong>
+                    {selectedFile && (
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.75rem' }}>
+                        {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
+                      </span>
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.5rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+                      >
+                        <Upload size={14} /> Change Image
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        style={{
+                          padding: '0.45rem 0.85rem',
+                          borderRadius: '8px',
+                          backgroundColor: '#fee2e2',
+                          color: '#991b1b',
+                          fontSize: '0.82rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          border: 'none',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <Trash2 size={14} /> Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    backgroundColor: '#f8fafc',
+                    borderRadius: '16px',
+                    border: '2px dashed #cbd5e1',
+                    padding: '2rem 1.5rem',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    transition: 'var(--transition)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      backgroundColor: 'var(--primary-light)',
+                      color: 'var(--primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 0.75rem',
+                    }}
+                  >
+                    <Upload size={24} />
+                  </div>
+                  <strong style={{ fontSize: '1rem', color: 'var(--secondary)', display: 'block', marginBottom: '0.25rem' }}>
+                    Upload an image of this product
+                  </strong>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ padding: '0.5rem 1.25rem', fontSize: '0.85rem', margin: '0.5rem 0 0.75rem' }}
+                  >
+                    Choose Image
+                  </button>
+                  <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    JPG, JPEG, PNG, WEBP &bull; Maximum size: 5 MB
+                  </p>
+                </div>
+              )}
+
+              {/* Collapsible toggle for external image URL fallback */}
+              <div style={{ marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowUrlOption(!showUrlOption)}
+                  style={{
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)',
+                    fontWeight: 600,
+                    textDecoration: 'underline',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  {showUrlOption ? 'Hide external Image URL option' : 'Or use an external Image URL (Optional)'}
+                </button>
+
+                {showUrlOption && (
+                  <div style={{ marginTop: '0.5rem' }}>
+                    <input
+                      type="text"
+                      placeholder="https://images.unsplash.com/..."
+                      value={image}
+                      onChange={(e) => {
+                        setImage(e.target.value);
+                        setSelectedFile(null);
+                      }}
+                      className="form-control"
+                      style={{ fontSize: '0.85rem' }}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-group">

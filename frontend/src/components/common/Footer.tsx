@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Phone, Mail, MapPin, ShoppingCart, Heart } from 'lucide-react';
+import { productService } from '../../services/productService';
+import { Category } from '../../types/Product';
 
 export const Footer: React.FC = () => {
   const location = useLocation();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    productService.getCategories().then(setCategories).catch(() => setCategories([]));
+  }, [location.pathname]);
 
   if (
     location.pathname.startsWith('/admin') ||
@@ -76,10 +83,21 @@ export const Footer: React.FC = () => {
         <div>
           <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: '#ffffff' }}>Categories</h4>
           <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.88rem', color: '#9ca3af' }}>
-            <li><Link to="/products?category=Fresh Fruits" style={{ color: '#9ca3af' }}>Fresh Fruits</Link></li>
-            <li><Link to="/products?category=Vegetables" style={{ color: '#9ca3af' }}>Organic Vegetables</Link></li>
-            <li><Link to="/products?category=Dairy & Milk" style={{ color: '#9ca3af' }}>Dairy & Eggs</Link></li>
-            <li><Link to="/products?category=Organic Staples" style={{ color: '#9ca3af' }}>Staples & Pulses</Link></li>
+            {categories.length > 0 ? (
+              categories.slice(0, 5).map((cat) => (
+                <li key={cat._id}>
+                  <Link to={`/products?category=${encodeURIComponent(cat._id)}`} style={{ color: '#9ca3af' }}>
+                    {cat.name}
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <li>
+                <Link to="/products" style={{ color: '#9ca3af' }}>
+                  All Categories
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
 

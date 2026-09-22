@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Minus, Trash2 } from 'lucide-react';
 import { CartItem as CartItemType } from '../../types/Cart';
 import { useCart } from '../../context/CartContext';
+import { getImageUrl } from '../../utils/imageUtils';
 
 interface CartItemProps {
   item: CartItemType;
@@ -25,7 +26,7 @@ export const CartItem: React.FC<CartItemProps> = ({ item }) => {
       {/* Product Image & Title */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
         <img
-          src={product.image}
+          src={getImageUrl(product.image)}
           alt={product.name}
           style={{
             width: '64px',

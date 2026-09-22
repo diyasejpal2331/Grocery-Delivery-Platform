@@ -17,10 +17,37 @@ export const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    const nameRegex = /^[A-Za-z][A-Za-z\s.'-]{1,49}$/;
+    if (!trimmedName || !nameRegex.test(trimmedName)) {
+      setError('Please enter a valid full name (at least 2 characters, starting with a letter).');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
+      setError('Please enter a valid email address (e.g. user@example.com).');
+      return;
+    }
+
+    if (trimmedPhone && !/^[0-9]{10}$/.test(trimmedPhone)) {
+      setError('Please enter a valid 10-digit mobile phone number.');
+      return;
+    }
+
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
+
     setError('');
     setSubmitting(true);
 

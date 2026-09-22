@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   DollarSign,
   ShoppingBag,
@@ -29,9 +29,11 @@ import { Product } from '../../types/Product';
 import { User } from '../../types/User';
 import { Loader } from '../../components/common/Loader';
 import { Modal } from '../../components/common/Modal';
+import { getImageUrl } from '../../utils/imageUtils';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -61,7 +63,7 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchAdminOverview();
-  }, []);
+  }, [location.pathname, location.key]);
 
   const handleStatusChange = async (id: string, newStatus: OrderStatus) => {
     try {
@@ -418,10 +420,7 @@ export const Dashboard: React.FC = () => {
                             }}
                           >
                             <img
-                              src={
-                                firstItem?.image ||
-                                'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'
-                              }
+                              src={getImageUrl(firstItem?.image)}
                               alt={firstItem?.name || 'Order product'}
                               style={{
                                 width: '40px',

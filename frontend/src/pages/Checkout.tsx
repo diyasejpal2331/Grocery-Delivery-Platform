@@ -32,8 +32,29 @@ export const Checkout: React.FC = () => {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!address.fullName || !address.phone || !address.street || !address.pincode) {
-      setError('Please fill in all mandatory delivery address fields.');
+    const nameRegex = /^[A-Za-z][A-Za-z\s.'-]{1,49}$/;
+    if (!address.fullName.trim() || !nameRegex.test(address.fullName.trim())) {
+      setError('Please enter a valid full name (at least 2 characters, starting with a letter).');
+      return;
+    }
+
+    if (!address.phone.trim() || !/^[0-9]{10}$/.test(address.phone.trim())) {
+      setError('Please enter a valid 10-digit mobile phone number.');
+      return;
+    }
+
+    if (!address.street.trim() || address.street.trim().length < 5) {
+      setError('Please enter a complete street address / house no. (at least 5 characters).');
+      return;
+    }
+
+    if (!address.city.trim()) {
+      setError('Please enter your delivery city.');
+      return;
+    }
+
+    if (!address.pincode.trim() || !/^[0-9]{6}$/.test(address.pincode.trim())) {
+      setError('Please enter a valid 6-digit postal pincode.');
       return;
     }
 

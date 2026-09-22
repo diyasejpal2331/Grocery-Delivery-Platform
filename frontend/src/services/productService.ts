@@ -145,48 +145,14 @@ export const productService = {
   getProducts: async (params?: ProductFilterParams): Promise<Product[]> => {
     try {
       const res = await api.get('/products', { params });
-      const rawProducts: any[] = res.data;
+      const rawProducts: any[] = Array.isArray(res.data) ? res.data : [];
       return rawProducts.map((p) => ({
         ...p,
         category: typeof p.category === 'object' && p.category ? p.category._id : p.category,
         categoryName: typeof p.category === 'object' && p.category ? p.category.name : (p.categoryName || 'General'),
       }));
     } catch {
-      // Mock filtering logic fallback for offline dev
-      let products = [...MOCK_PRODUCTS];
-
-      if (params?.category && params.category !== 'all') {
-        products = products.filter(
-          (p) => p.category === params.category || p.categoryName?.toLowerCase() === params.category?.toLowerCase()
-        );
-      }
-
-      if (params?.search) {
-        const query = params.search.toLowerCase();
-        products = products.filter(
-          (p) =>
-            p.name.toLowerCase().includes(query) ||
-            p.description.toLowerCase().includes(query) ||
-            p.categoryName?.toLowerCase().includes(query)
-        );
-      }
-
-      if (params?.minPrice !== undefined) {
-        products = products.filter((p) => p.price >= params.minPrice!);
-      }
-
-      if (params?.maxPrice !== undefined) {
-        products = products.filter((p) => p.price <= params.maxPrice!);
-      }
-
-      if (params?.sortBy) {
-        if (params.sortBy === 'price-low') products.sort((a, b) => a.price - b.price);
-        if (params.sortBy === 'price-high') products.sort((a, b) => b.price - a.price);
-        if (params.sortBy === 'rating') products.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-        if (params.sortBy === 'popular') products.sort((a, b) => (b.numReviews || 0) - (a.numReviews || 0));
-      }
-
-      return products;
+      return [];
     }
   },
 
@@ -200,23 +166,19 @@ export const productService = {
         categoryName: typeof p.category === 'object' && p.category ? p.category.name : p.categoryName,
       };
     } catch {
-      const found = MOCK_PRODUCTS.find((p) => p._id === id);
-      if (!found) {
-        throw new Error('Product not found');
-      }
-      return found;
+      throw new Error('Product not found');
     }
   },
 
   getCategories: async (): Promise<Category[]> => {
     try {
       const res = await api.get('/categories');
-      if (Array.isArray(res.data) && res.data.length > 0) {
+      if (Array.isArray(res.data)) {
         return res.data;
       }
-      return INITIAL_CATEGORIES;
+      return [];
     } catch {
-      return INITIAL_CATEGORIES;
+      return [];
     }
   },
 
@@ -224,15 +186,56 @@ export const productService = {
     try {
       const res = await api.post('/categories', categoryData);
       return res.data;
-    } catch {
+    } catch (err: any) {
+      if (err.status || (err.data?.message && err.message !== 'Network Error')) {
+        throw new Error(err.data?.message || err.message);
+      }
       const newCat: Category = {
         _id: `cat-${Date.now()}`,
-        name: categoryData.name || 'New Category',
-        slug: categoryData.slug || categoryData.name?.toLowerCase().replace(/\s+/g, '-') || 'new-category',
-        description: categoryData.description || '',
+        name: categoryData.name || '',
+        slug: categoryData.slug || (categoryData.name || '').toLowerCase().replace(/\s+/g, '-'),
+        description: categoryData.description || 'Fresh store produce category',
       };
       INITIAL_CATEGORIES.push(newCat);
       return newCat;
+    }
+  },
+
+  updateCategory: async (id: string, categoryData: Partial<Category>): Promise<Category> => {
+    try {
+      const res = await api.put(`/categories/${id}`, categoryData);
+      return res.data;
+    } catch (err: any) {
+      if (err.status || (err.data?.message && err.message !== 'Network Error')) {
+        throw new Error(err.data?.message || err.message);
+      }
+      const index = INITIAL_CATEGORIES.findIndex((c) => c._id === id);
+      if (index !== -1) {
+        INITIAL_CATEGORIES[index] = { ...INITIAL_CATEGORIES[index], ...categoryData };
+        return INITIAL_CATEGORIES[index];
+      }
+      return {
+        _id: id,
+        name: categoryData.name || '',
+        slug: categoryData.slug || '',
+        description: categoryData.description || '',
+      };
+    }
+  },
+
+  deleteCategory: async (id: string): Promise<{ message: string }> => {
+    try {
+      const res = await api.delete(`/categories/${id}`);
+      return res.data;
+    } catch (err: any) {
+      if (err.status || (err.data?.message && err.message !== 'Network Error')) {
+        throw new Error(err.data?.message || err.message);
+      }
+      const index = INITIAL_CATEGORIES.findIndex((c) => c._id === id);
+      if (index !== -1) {
+        INITIAL_CATEGORIES.splice(index, 1);
+      }
+      return { message: 'Category deleted successfully' };
     }
   },
 

@@ -6,6 +6,8 @@ import { Product } from '../types/Product';
 import { useCart } from '../context/CartContext';
 import { Loader } from '../components/common/Loader';
 
+import { getImageUrl } from '../utils/imageUtils';
+
 export const ProductDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -87,7 +89,7 @@ export const ProductDetails: React.FC = () => {
         {/* Product Image Gallery */}
         <div style={{ position: 'relative' }}>
           <img
-            src={product.image}
+            src={getImageUrl(product.image)}
             alt={product.name}
             style={{
               width: '100%',

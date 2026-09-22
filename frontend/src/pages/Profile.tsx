@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User as UserIcon, Mail, Phone, MapPin, Save, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,19 +12,54 @@ export const Profile: React.FC = () => {
   const [state, setState] = useState(user?.address?.state || '');
   const [pincode, setPincode] = useState(user?.address?.pincode || '');
   const [savedMessage, setSavedMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setPhone(user.phone || '');
+      setStreet(user.address?.street || '');
+      setCity(user.address?.city || '');
+      setState(user.address?.state || '');
+      setPincode(user.address?.pincode || '');
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSavedMessage('');
+    setErrorMessage('');
+
+    const trimmedName = name.trim();
+    const nameRegex = /^[A-Za-z][A-Za-z\s.'-]{1,49}$/;
+    if (!trimmedName || !nameRegex.test(trimmedName)) {
+      setErrorMessage('Please enter a valid full name (at least 2 characters, starting with a letter).');
+      return;
+    }
+
+    const trimmedPhone = phone.trim();
+    if (trimmedPhone && !/^[0-9]{10}$/.test(trimmedPhone)) {
+      setErrorMessage('Please enter a valid 10-digit mobile phone number.');
+      return;
+    }
+
+    const trimmedPincode = pincode.trim();
+    if (trimmedPincode && !/^[0-9]{6}$/.test(trimmedPincode)) {
+      setErrorMessage('Please enter a valid 6-digit postal pincode.');
+      return;
+    }
+
     try {
       await updateUser({
-        name,
-        phone,
-        address: { street, city, state, pincode },
+        name: trimmedName,
+        phone: trimmedPhone,
+        address: { street: street.trim(), city: city.trim(), state: state.trim(), pincode: trimmedPincode },
       });
       setSavedMessage('Profile updated successfully!');
       setTimeout(() => setSavedMessage(''), 3000);
     } catch (err: any) {
       console.error('Failed to update profile:', err);
+      setErrorMessage(err.message || 'Failed to update profile.');
     }
   };
 
@@ -63,6 +98,23 @@ export const Profile: React.FC = () => {
             <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{user?.email}</span>
           </div>
         </div>
+
+        {errorMessage && (
+          <div
+            style={{
+              backgroundColor: '#fee2e2',
+              color: '#991b1b',
+              padding: '0.75rem 1rem',
+              borderRadius: '12px',
+              fontSize: '0.88rem',
+              fontWeight: 600,
+              marginBottom: '1.5rem',
+              border: '1px solid #fca5a5',
+            }}
+          >
+            {errorMessage}
+          </div>
+        )}
 
         {savedMessage && (
           <div

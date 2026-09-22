@@ -101,9 +101,39 @@ const createProduct = async (req, res) => {
             isOrganic
         } = req.body;
 
-        if (!name || price === undefined || price === null || !category) {
+        if (!name || !name.trim() || price === undefined || price === null || !category) {
             return res.status(400).json({
                 message: "Please provide product name, price, and category."
+            });
+        }
+
+        const trimmedName = name.trim();
+        if (trimmedName.length < 2 || !/[a-zA-Z]/.test(trimmedName)) {
+            return res.status(400).json({
+                message: "Product name must contain letters and be at least 2 characters long."
+            });
+        }
+
+        const numPrice = Number(price);
+        if (isNaN(numPrice) || numPrice <= 0) {
+            return res.status(400).json({
+                message: "Price must be a valid number greater than ₹0."
+            });
+        }
+
+        if (originalPrice !== undefined && originalPrice !== null && originalPrice !== "") {
+            const numOriginal = Number(originalPrice);
+            if (isNaN(numOriginal) || numOriginal < numPrice) {
+                return res.status(400).json({
+                    message: "Original price (MRP) cannot be less than selling price."
+                });
+            }
+        }
+
+        const numStock = Number(stock);
+        if (isNaN(numStock) || numStock < 0) {
+            return res.status(400).json({
+                message: "Stock quantity cannot be negative."
             });
         }
 
@@ -125,13 +155,13 @@ const createProduct = async (req, res) => {
         }
 
         const product = await Product.create({
-            name,
+            name: trimmedName,
             description: description || "",
-            price,
-            originalPrice,
+            price: numPrice,
+            originalPrice: originalPrice ? Number(originalPrice) : undefined,
             image: image || "",
             category: categoryId,
-            stock: stock !== undefined ? stock : 0,
+            stock: isNaN(numStock) ? 0 : numStock,
             unit: unit || "piece",
             isOrganic: Boolean(isOrganic)
         });
@@ -172,6 +202,48 @@ const updateProduct = async (req, res) => {
         }
 
         const updateData = { ...req.body };
+
+        if (updateData.name !== undefined) {
+            const trimmedName = String(updateData.name).trim();
+            if (trimmedName.length < 2 || !/[a-zA-Z]/.test(trimmedName)) {
+                return res.status(400).json({
+                    message: "Product name must contain letters and be at least 2 characters long."
+                });
+            }
+            updateData.name = trimmedName;
+        }
+
+        if (updateData.price !== undefined) {
+            const numPrice = Number(updateData.price);
+            if (isNaN(numPrice) || numPrice <= 0) {
+                return res.status(400).json({
+                    message: "Price must be a valid number greater than ₹0."
+                });
+            }
+            updateData.price = numPrice;
+        }
+
+        if (updateData.originalPrice !== undefined && updateData.originalPrice !== null && updateData.originalPrice !== "") {
+            const numOriginal = Number(updateData.originalPrice);
+            const currentPrice = updateData.price !== undefined ? updateData.price : product.price;
+            if (isNaN(numOriginal) || numOriginal < currentPrice) {
+                return res.status(400).json({
+                    message: "Original price (MRP) cannot be less than selling price."
+                });
+            }
+            updateData.originalPrice = numOriginal;
+        }
+
+        if (updateData.stock !== undefined) {
+            const numStock = Number(updateData.stock);
+            if (isNaN(numStock) || numStock < 0) {
+                return res.status(400).json({
+                    message: "Stock quantity cannot be negative."
+                });
+            }
+            updateData.stock = numStock;
+        }
+
         if (updateData.category && !mongoose.Types.ObjectId.isValid(updateData.category)) {
             delete updateData.category;
         }

@@ -17,8 +17,18 @@ export const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       setError('Please enter your email address');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Please enter a valid email address (e.g. user@example.com).');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
       return;
     }
     setError('');

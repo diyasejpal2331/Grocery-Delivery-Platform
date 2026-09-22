@@ -30,6 +30,27 @@ const createOrder = async (req, res) => {
             image: item.image || item.product?.image || ""
         }));
 
+        if (!shippingAddress || !shippingAddress.fullName || !shippingAddress.phone || (!shippingAddress.street && !shippingAddress.address) || (!shippingAddress.pincode && !shippingAddress.postalCode)) {
+            return res.status(400).json({
+                message: "Please provide complete delivery address details (Full Name, Phone, Street, and Pincode)."
+            });
+        }
+
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(String(shippingAddress.phone).trim())) {
+            return res.status(400).json({
+                message: "Please enter a valid 10-digit mobile phone number for delivery."
+            });
+        }
+
+        const pincodeRegex = /^[0-9]{6}$/;
+        const providedPincode = String(shippingAddress.pincode || shippingAddress.postalCode).trim();
+        if (!pincodeRegex.test(providedPincode)) {
+            return res.status(400).json({
+                message: "Please enter a valid 6-digit postal pincode."
+            });
+        }
+
         const formattedAddress = {
             fullName: shippingAddress?.fullName || req.user?.name || "Customer",
             phone: shippingAddress?.phone || req.user?.phone || "N/A",

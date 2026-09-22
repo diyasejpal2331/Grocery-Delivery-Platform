@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Star, Check, Plus, Eye } from 'lucide-react';
 import { Product } from '../../types/Product';
 import { useCart } from '../../context/CartContext';
+import { getImageUrl } from '../../utils/imageUtils';
 
 interface ProductCardProps {
   product: Product;
@@ -60,7 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           }}
         >
           <img
-            src={product.image}
+            src={getImageUrl(product.image)}
             alt={product.name}
             style={{
               maxHeight: '100%',

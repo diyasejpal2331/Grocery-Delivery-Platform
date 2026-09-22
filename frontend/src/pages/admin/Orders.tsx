@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   ShoppingBag,
   Search,
@@ -16,8 +17,10 @@ import { orderService } from '../../services/orderService';
 import { Order, OrderStatus } from '../../types/Order';
 import { Loader } from '../../components/common/Loader';
 import { Modal } from '../../components/common/Modal';
+import { getImageUrl } from '../../utils/imageUtils';
 
 export const AdminOrders: React.FC = () => {
+  const location = useLocation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>('All');
@@ -40,7 +43,7 @@ export const AdminOrders: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [location.pathname, location.key]);
 
   const handleStatusChange = async (id: string, newStatus: OrderStatus) => {
     try {
@@ -331,7 +334,7 @@ export const AdminOrders: React.FC = () => {
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                             <img
-                              src={firstItem?.image || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80'}
+                              src={getImageUrl(firstItem?.image)}
                               alt={firstItem?.name || 'Item'}
                               style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover' }}
                             />
@@ -557,7 +560,7 @@ export const AdminOrders: React.FC = () => {
                 {selectedOrder.orderItems.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.75rem', backgroundColor: '#f9fafb', borderRadius: '8px', fontSize: '0.85rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <img src={item.image} alt={item.name} style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
+                      <img src={getImageUrl(item.image)} alt={item.name} style={{ width: '32px', height: '32px', borderRadius: '6px', objectFit: 'cover' }} />
                       <span><strong>{item.name}</strong> x {item.quantity}</span>
                     </div>
                     <strong style={{ color: 'var(--secondary)' }}>₹{item.price * item.quantity}</strong>

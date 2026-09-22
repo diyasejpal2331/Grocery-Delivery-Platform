@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Users as UsersIcon, ShieldCheck, User as UserIcon, Search, Mail, Phone, Calendar, RefreshCw } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
 import { authService } from '../../services/authService';
@@ -6,6 +7,7 @@ import { User } from '../../types/User';
 import { Loader } from '../../components/common/Loader';
 
 export const AdminUsers: React.FC = () => {
+  const location = useLocation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -25,7 +27,7 @@ export const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [location.pathname, location.key]);
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =

@@ -13,33 +13,64 @@ const generateToken = (id) => {
 };
 
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const nameRegex = /^[A-Za-z][A-Za-z\s.'-]{1,49}$/;
+const phoneRegex = /^[0-9]{10}$/;
+
 // REGISTER
 const registerUser = async (req, res) => {
     try {
         const { name, email, password, address, phone } = req.body;
 
-        if (!name || !email || !password) {
+        if (!name || !name.trim() || !email || !email.trim() || !password) {
             return res.status(400).json({
                 message: "Please provide name, email and password"
             });
         }
 
-        const existingUser = await User.findOne({ email });
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim().toLowerCase();
+
+        if (!nameRegex.test(trimmedName)) {
+            return res.status(400).json({
+                message: "Please enter a valid full name (must start with a letter and be at least 2 characters)."
+            });
+        }
+
+        if (!emailRegex.test(trimmedEmail)) {
+            return res.status(400).json({
+                message: "Please enter a valid email address (e.g. user@example.com)."
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters long."
+            });
+        }
+
+        if (phone && phone.trim() && !phoneRegex.test(phone.trim())) {
+            return res.status(400).json({
+                message: "Please enter a valid 10-digit mobile phone number."
+            });
+        }
+
+        const existingUser = await User.findOne({ email: trimmedEmail });
 
         if (existingUser) {
             return res.status(400).json({
-                message: "User already exists"
+                message: "User already exists with this email address"
             });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const user = await User.create({
-            name,
-            email,
+            name: trimmedName,
+            email: trimmedEmail,
             password: hashedPassword,
             address: address || "",
-            phone: phone || ""
+            phone: phone ? phone.trim() : ""
         });
 
         res.status(201).json({
@@ -68,7 +99,20 @@ const loginUser = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email });
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Please enter your email and password"
+            });
+        }
+
+        const trimmedEmail = email.trim().toLowerCase();
+        if (!emailRegex.test(trimmedEmail)) {
+            return res.status(400).json({
+                message: "Please enter a valid email address."
+            });
+        }
+
+        const user = await User.findOne({ email: trimmedEmail });
 
         if (!user) {
             return res.status(401).json({
@@ -119,12 +163,44 @@ const updateProfile = async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
 
-        user.name = req.body.name || user.name;
-        user.email = req.body.email || user.email;
+        if (req.body.name && req.body.name.trim()) {
+            const trimmedName = req.body.name.trim();
+            if (!nameRegex.test(trimmedName)) {
+                return res.status(400).json({
+                    message: "Please enter a valid full name."
+                });
+            }
+            user.name = trimmedName;
+        }
+
+        if (req.body.phone !== undefined) {
+            const trimmedPhone = String(req.body.phone).trim();
+            if (trimmedPhone && !phoneRegex.test(trimmedPhone)) {
+                return res.status(400).json({
+                    message: "Please enter a valid 10-digit mobile phone number."
+                });
+            }
+            user.phone = trimmedPhone;
+        }
+
+        if (req.body.email && req.body.email.trim()) {
+            const trimmedEmail = req.body.email.trim().toLowerCase();
+            if (!emailRegex.test(trimmedEmail)) {
+                return res.status(400).json({
+                    message: "Please enter a valid email address."
+                });
+            }
+            user.email = trimmedEmail;
+        }
+
         user.address = req.body.address || user.address;
-        user.phone = req.body.phone || user.phone;
 
         if (req.body.password) {
+            if (req.body.password.length < 6) {
+                return res.status(400).json({
+                    message: "New password must be at least 6 characters long."
+                });
+            }
             user.password = await bcrypt.hash(
                 req.body.password,
                 10

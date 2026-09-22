@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -22,17 +22,19 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import { productService, INITIAL_CATEGORIES } from '../services/productService';
+import { productService } from '../services/productService';
 import { orderService } from '../services/orderService';
 import { Product, Category } from '../types/Product';
 import { Order } from '../types/Order';
+import { getImageUrl } from '../utils/imageUtils';
 
 export const UserDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const { cartItems, totalAmount, addToCart } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [popularProducts, setPopularProducts] = useState<Product[]>([]);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,7 @@ export const UserDashboard: React.FC = () => {
   const [addedItemIds, setAddedItemIds] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
+    let isMounted = true;
     const fetchDashboardData = async () => {
       try {
         const [cats, prods, orders] = await Promise.all([
@@ -47,17 +50,25 @@ export const UserDashboard: React.FC = () => {
           productService.getProducts({ sortBy: 'popular' }),
           orderService.getMyOrders(),
         ]);
-        setCategories(cats);
-        setPopularProducts(prods);
-        setRecentOrders(orders);
+        if (isMounted) {
+          setCategories(cats);
+          setPopularProducts(prods);
+          setRecentOrders(orders);
+        }
       } catch (err) {
         console.error('Failed to load user dashboard data:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchDashboardData();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname, location.key]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -314,7 +325,10 @@ export const UserDashboard: React.FC = () => {
           </div>
 
           <button
-            onClick={logout}
+            onClick={() => {
+              logout();
+              navigate('/login');
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -475,57 +489,63 @@ export const UserDashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-              gap: '1rem',
-            }}
-          >
-            {categories.map((cat) => (
-              <Link
-                key={cat._id}
-                to={`/products?category=${encodeURIComponent(cat.name)}`}
-                style={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '18px',
-                  padding: '1.25rem 0.85rem',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  color: '#0f172a',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-                  border: '1px solid #f1f5f9',
-                  transition: 'transform 0.2s ease, boxShadow 0.2s ease',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '0.65rem',
-                }}
-              >
-                <div
+          {categories.length === 0 ? (
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', padding: '1.5rem', textAlign: 'center', border: '1px solid #f1f5f9' }}>
+              <p style={{ fontSize: '0.88rem', color: '#94a3b8' }}>No categories created yet.</p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                gap: '1rem',
+              }}
+            >
+              {categories.map((cat) => (
+                <Link
+                  key={cat._id}
+                  to={`/products?category=${encodeURIComponent(cat.name)}`}
                   style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '14px',
-                    backgroundColor: '#fffbeb',
+                    backgroundColor: '#ffffff',
+                    borderRadius: '18px',
+                    padding: '1.25rem 0.85rem',
+                    textAlign: 'center',
+                    textDecoration: 'none',
+                    color: '#0f172a',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                    border: '1px solid #f1f5f9',
+                    transition: 'transform 0.2s ease, boxShadow 0.2s ease',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.4rem',
+                    gap: '0.65rem',
                   }}
                 >
-                  {cat.image ? (
-                    <img src={cat.image} alt={cat.name} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
-                  ) : (
-                    '🛒'
-                  )}
-                </div>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
-                  {cat.name}
-                </span>
-              </Link>
-            ))}
-          </div>
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '14px',
+                      backgroundColor: '#fffbeb',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1.4rem',
+                    }}
+                  >
+                    {cat.image ? (
+                      <img src={cat.image} alt={cat.name} style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+                    ) : (
+                      '🛒'
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#334155' }}>
+                    {cat.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Popular Products Section */}
@@ -537,96 +557,102 @@ export const UserDashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-              gap: '1.25rem',
-            }}
-          >
-            {popularProducts.slice(0, 6).map((prod) => {
-              const isAdded = addedItemIds[prod._id];
-              return (
-                <div
-                  key={prod._id}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    borderRadius: '20px',
-                    padding: '1rem',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-                    border: '1px solid #f1f5f9',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    position: 'relative',
-                  }}
-                >
-                  {/* Badge */}
+          {popularProducts.length === 0 ? (
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', padding: '1.5rem', textAlign: 'center', border: '1px solid #f1f5f9' }}>
+              <p style={{ fontSize: '0.88rem', color: '#94a3b8' }}>No products available yet.</p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                gap: '1.25rem',
+              }}
+            >
+              {popularProducts.slice(0, 6).map((prod) => {
+                const isAdded = addedItemIds[prod._id];
+                return (
                   <div
+                    key={prod._id}
                     style={{
-                      position: 'absolute',
-                      top: '12px',
-                      left: '12px',
-                      backgroundColor: '#ef4444',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '0.2rem 0.55rem',
-                      borderRadius: '8px',
-                      zIndex: 2,
+                      backgroundColor: '#ffffff',
+                      borderRadius: '20px',
+                      padding: '1rem',
+                      boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+                      border: '1px solid #f1f5f9',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      position: 'relative',
                     }}
                   >
-                    15% OFF
-                  </div>
-
-                  <Link to={`/products/${prod._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    <div style={{ height: '140px', width: '100%', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <img
-                        src={prod.image}
-                        alt={prod.name}
-                        style={{ maxHeight: '130px', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#f59e0b', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem' }}>
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <span>{prod.rating || '4.8'}</span>
-                    </div>
-
-                    <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.75rem', height: '2.4em', overflow: 'hidden', lineHeight: 1.2 }}>
-                      {prod.name}
-                    </h4>
-                  </Link>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-                    <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
-                      ₹{prod.price}
-                    </span>
-
-                    <button
-                      onClick={() => handleAddToCart(prod)}
+                    {/* Badge */}
+                    <div
                       style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '12px',
-                        backgroundColor: isAdded ? '#10b981' : '#ebad34',
+                        position: 'absolute',
+                        top: '12px',
+                        left: '12px',
+                        backgroundColor: '#ef4444',
                         color: '#ffffff',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'background-color 0.2s ease',
+                        fontSize: '0.72rem',
+                        fontWeight: 800,
+                        padding: '0.2rem 0.55rem',
+                        borderRadius: '8px',
+                        zIndex: 2,
                       }}
-                      title="Add to Cart"
                     >
-                      {isAdded ? <Check size={18} /> : <Plus size={20} />}
-                    </button>
+                      15% OFF
+                    </div>
+
+                    <Link to={`/products/${prod._id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div style={{ height: '140px', width: '100%', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <img
+                          src={getImageUrl(prod.image)}
+                          alt={prod.name}
+                          style={{ maxHeight: '130px', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#f59e0b', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                        <Star size={14} fill="#f59e0b" color="#f59e0b" />
+                        <span>{prod.rating || '4.8'}</span>
+                      </div>
+
+                      <h4 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.75rem', height: '2.4em', overflow: 'hidden', lineHeight: 1.2 }}>
+                        {prod.name}
+                      </h4>
+                    </Link>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+                      <span style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                        ₹{prod.price}
+                      </span>
+
+                      <button
+                        onClick={() => handleAddToCart(prod)}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '12px',
+                          backgroundColor: isAdded ? '#10b981' : '#ebad34',
+                          color: '#ffffff',
+                          border: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s ease',
+                        }}
+                        title="Add to Cart"
+                      >
+                        {isAdded ? <Check size={18} /> : <Plus size={20} />}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* Recent Orders Section */}
@@ -930,7 +956,7 @@ export const UserDashboard: React.FC = () => {
                     }}
                   >
                     <img
-                      src={item.product.image}
+                      src={getImageUrl(item.product.image)}
                       alt={item.product.name}
                       style={{ width: '42px', height: '42px', borderRadius: '10px', objectFit: 'cover' }}
                     />

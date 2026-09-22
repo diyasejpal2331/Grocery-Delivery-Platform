@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { useAuth } from './context/AuthContext';
+import { ScrollToTop } from './components/common/ScrollToTop';
+import { Loader } from './components/common/Loader';
 
 // Customer Pages
 import { Home } from './pages/Home';
@@ -30,7 +32,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  if (loading) return <Loader fullScreen text="Verifying session..." />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -44,7 +46,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isAdmin, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  if (loading) return <Loader fullScreen text="Verifying admin credentials..." />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -60,6 +62,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 export const App: React.FC = () => {
   return (
     <Router>
+      <ScrollToTop />
       <div className="app-container">
         <Navbar />
 

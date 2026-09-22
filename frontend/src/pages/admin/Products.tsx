@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Plus,
   Edit,
@@ -11,13 +11,16 @@ import {
   Package,
 } from 'lucide-react';
 import { AdminLayout } from '../../components/admin/AdminLayout';
-import { productService, INITIAL_CATEGORIES } from '../../services/productService';
+import { productService } from '../../services/productService';
 import { Product, Category } from '../../types/Product';
 import { Loader } from '../../components/common/Loader';
 
+import { getImageUrl } from '../../utils/imageUtils';
+
 export const AdminProducts: React.FC = () => {
+  const location = useLocation();
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('All');
@@ -40,7 +43,7 @@ export const AdminProducts: React.FC = () => {
 
   useEffect(() => {
     loadProductsData();
-  }, []);
+  }, [location.pathname, location.key]);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -277,7 +280,7 @@ export const AdminProducts: React.FC = () => {
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                             <img
-                              src={p.image}
+                              src={getImageUrl(p.image)}
                               alt={p.name}
                               style={{ width: '44px', height: '44px', borderRadius: '10px', objectFit: 'cover' }}
                             />

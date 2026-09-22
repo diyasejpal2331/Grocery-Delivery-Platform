@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Package, Calendar, ChevronRight, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
 import { orderService } from '../services/orderService';
 import { Order } from '../types/Order';
@@ -8,21 +8,31 @@ import { Loader } from '../components/common/Loader';
 export const Orders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   useEffect(() => {
+    let isMounted = true;
     const fetchOrders = async () => {
       try {
         const data = await orderService.getMyOrders();
-        setOrders(data);
+        if (isMounted) {
+          setOrders(data);
+        }
       } catch (err) {
         console.error('Failed to load orders:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchOrders();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname, location.key]);
 
   if (loading) return <Loader fullScreen text="Loading your orders..." />;
 

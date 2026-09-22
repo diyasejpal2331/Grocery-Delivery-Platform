@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ProductGrid } from '../components/product/ProductGrid';
-import { productService, INITIAL_CATEGORIES } from '../services/productService';
+import { productService } from '../services/productService';
 import { Product, Category } from '../types/Product';
-//import vegetablesImage from "../assets/images.jpg";
 
 export const Home: React.FC = () => {
+  const location = useLocation();
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Live countdown timer state (29 Days 15 Hours 25 Mins 08 Secs matching image)
@@ -32,22 +32,31 @@ export const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
     const loadHomeData = async () => {
       try {
         const [prods, cats] = await Promise.all([
           productService.getProducts({ sortBy: 'popular' }),
           productService.getCategories(),
         ]);
-        setFeaturedProducts(prods);
-        setCategories(cats);
+        if (isMounted) {
+          setFeaturedProducts(prods);
+          setCategories(cats);
+        }
       } catch (err) {
         console.error('Failed to load home data:', err);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     loadHomeData();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [location.pathname, location.key]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>

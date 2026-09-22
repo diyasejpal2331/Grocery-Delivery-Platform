@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, MapPin, CreditCard, Clock, Truck, ShieldCheck 
 import { orderService } from '../services/orderService';
 import { Order } from '../types/Order';
 import { Loader } from '../components/common/Loader';
+import { getImageUrl } from '../utils/imageUtils';
 
 export const OrderDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -145,7 +146,7 @@ export const OrderDetails: React.FC = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {order.orderItems.map((item, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                <img src={item.image} alt={item.name} style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover' }} />
+                <img src={getImageUrl(item.image)} alt={item.name} style={{ width: '56px', height: '56px', borderRadius: '10px', objectFit: 'cover' }} />
                 <div style={{ flex: 1 }}>
                   <h4 style={{ fontSize: '0.95rem', fontWeight: 700 }}>{item.name}</h4>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>₹{item.price} x {item.quantity}</span>

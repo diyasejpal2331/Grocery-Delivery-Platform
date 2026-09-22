@@ -1,15 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ShoppingBag, Search, MapPin, Mail, Phone, ShoppingCart, User as UserIcon, LogOut, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { Modal } from './Modal';
+import { productService } from '../../services/productService';
+import { Category } from '../../types/Product';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { totalItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    productService.getCategories().then(setCategories).catch(() => setCategories([]));
+  }, [location.pathname]);
 
   if (
     location.pathname.startsWith('/admin') ||
@@ -134,36 +142,21 @@ export const Navbar: React.FC = () => {
                     zIndex: 200,
                   }}
                 >
-                  <Link
-                    to="/products?category=Fresh Fruits"
-                    style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}
-                  >
-                    🍎 Fresh Fruits
-                  </Link>
-                  <Link
-                    to="/products?category=Vegetables"
-                    style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}
-                  >
-                    🥦 Organic Vegetables
-                  </Link>
-                  <Link
-                    to="/products?category=Dairy %26 Milk"
-                    style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}
-                  >
-                    🥛 Dairy & Milk
-                  </Link>
-                  <Link
-                    to="/products?category=Bakery %26 Snacks"
-                    style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}
-                  >
-                    🍞 Bakery & Bread
-                  </Link>
-                  <Link
-                    to="/products?category=Organic Staples"
-                    style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}
-                  >
-                    🌾 Staples & Pulses
-                  </Link>
+                  {categories.length > 0 ? (
+                    categories.map((cat) => (
+                      <Link
+                        key={cat._id}
+                        to={`/products?category=${encodeURIComponent(cat._id)}`}
+                        style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.88rem', color: 'var(--text-main)', fontWeight: 600 }}
+                      >
+                        {cat.name}
+                      </Link>
+                    ))
+                  ) : (
+                    <span style={{ display: 'block', padding: '0.5rem 1rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                      No categories available
+                    </span>
+                  )}
                   <div style={{ borderTop: '1px solid var(--border)', margin: '0.25rem 0' }} />
                   <Link
                     to="/products"
@@ -348,7 +341,10 @@ export const Navbar: React.FC = () => {
                 </Link>
 
                 <button
-                  onClick={logout}
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
                   title="Logout"
                   style={{
                     display: 'flex',
