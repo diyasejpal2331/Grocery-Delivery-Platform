@@ -29,12 +29,12 @@ import { AdminCategories } from './pages/admin/Categories';
 
 // Protected Route Wrapper for Logged-In Users
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const location = useLocation();
 
   if (loading) return <Loader fullScreen text="Verifying session..." />;
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -43,16 +43,16 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 // Admin Route Wrapper
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
+  const { isAuthenticated, user, isAdmin, loading } = useAuth();
   const location = useLocation();
 
   if (loading) return <Loader fullScreen text="Verifying admin credentials..." />;
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (!isAdmin) {
+  if (!isAdmin || user.role !== 'admin') {
     return <Navigate to="/dashboard" replace />;
   }
 

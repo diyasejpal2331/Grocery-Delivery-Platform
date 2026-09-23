@@ -14,6 +14,9 @@ export const Navbar: React.FC = () => {
   const location = useLocation();
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeModal, setActiveModal] = useState<'about' | 'blog' | 'contact' | null>(null);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   useEffect(() => {
     productService.getCategories().then(setCategories).catch(() => setCategories([]));
@@ -27,10 +30,6 @@ export const Navbar: React.FC = () => {
   ) {
     return null;
   }
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeModal, setActiveModal] = useState<'about' | 'blog' | 'contact' | null>(null);
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

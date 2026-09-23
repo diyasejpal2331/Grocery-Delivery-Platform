@@ -18,51 +18,90 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    let isMounted = true;
     const initAuth = async () => {
-      if (token) {
+      const savedToken = localStorage.getItem('token');
+      if (savedToken) {
         try {
           const currentUser = await authService.getCurrentUser();
-          setUser(currentUser);
-          localStorage.setItem('user', JSON.stringify(currentUser));
+          if (isMounted && currentUser) {
+            setUser(currentUser);
+            localStorage.setItem('user', JSON.stringify(currentUser));
+          }
         } catch (err) {
           console.error('Failed to restore session:', err);
+          if (isMounted) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          }
         }
+      } else if (isMounted) {
+        setToken(null);
+        setUser(null);
       }
-      setLoading(false);
+
+      if (isMounted) {
+        setLoading(false);
+      }
     };
 
     initAuth();
-  }, [token]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const login = async (credentials: LoginCredentials): Promise<User> => {
-    const res = await authService.login(credentials);
-    setToken(res.token);
-    setUser(res.user);
-    localStorage.setItem('token', res.token);
-    localStorage.setItem('user', JSON.stringify(res.user));
-    return res.user;
+    setLoading(true);
+    try {
+      const res = await authService.login(credentials);
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify(res.user));
+      setToken(res.token);
+      setUser(res.user);
+      setLoading(false);
+      return res.user;
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   };
 
   const register = async (data: RegisterData) => {
-    const res = await authService.register(data);
-    setToken(res.token);
-    setUser(res.user);
-    localStorage.setItem('token', res.token);
-    localStorage.setItem('user', JSON.stringify(res.user));
+    setLoading(true);
+    try {
+      const res = await authService.register(data);
+      localStorage.setItem('token', res.token);
+      localStorage.setItem('user', JSON.stringify(res.user));
+      setToken(res.token);
+      setUser(res.user);
+      setLoading(false);
+    } catch (err) {
+      setLoading(false);
+      throw err;
+    }
   };
 
   const logout = () => {
-    setUser(null);
-    setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setToken(null);
+    setUser(null);
+    setLoading(false);
   };
 
   const updateUser = async (updatedData: Partial<User>) => {

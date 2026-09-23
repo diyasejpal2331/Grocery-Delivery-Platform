@@ -71,9 +71,11 @@ export const AdminOrders: React.FC = () => {
   });
 
   // Pagination calculation
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const getStatusBadgeStyle = (status: OrderStatus) => {
     switch (status) {

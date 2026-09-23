@@ -28,22 +28,15 @@ export const AdminCategories: React.FC = () => {
   const [deleteErrorMsg, setDeleteErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    let isMounted = true;
     const fetchCatsAndProducts = async () => {
       const [list, prods] = await Promise.all([
         productService.getCategories(),
         productService.getProducts(),
       ]);
-      if (isMounted) {
-        setCategories(list);
-        setProducts(prods);
-      }
+      setCategories(list);
+      setProducts(prods);
     };
     fetchCatsAndProducts();
-
-    return () => {
-      isMounted = false;
-    };
   }, [location.pathname, location.key]);
 
   const [submitting, setSubmitting] = useState(false);
