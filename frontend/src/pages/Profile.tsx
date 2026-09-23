@@ -7,10 +7,11 @@ export const Profile: React.FC = () => {
 
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [street, setStreet] = useState(user?.address?.street || '');
-  const [city, setCity] = useState(user?.address?.city || '');
-  const [state, setState] = useState(user?.address?.state || '');
-  const [pincode, setPincode] = useState(user?.address?.pincode || '');
+  const initialAddressObj = typeof user?.address === 'object' && user?.address ? user.address : null;
+  const [street, setStreet] = useState(initialAddressObj?.street || (typeof user?.address === 'string' ? user.address : ''));
+  const [city, setCity] = useState(initialAddressObj?.city || '');
+  const [state, setState] = useState(initialAddressObj?.state || '');
+  const [pincode, setPincode] = useState(initialAddressObj?.pincode || '');
   const [savedMessage, setSavedMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -18,10 +19,17 @@ export const Profile: React.FC = () => {
     if (user) {
       setName(user.name || '');
       setPhone(user.phone || '');
-      setStreet(user.address?.street || '');
-      setCity(user.address?.city || '');
-      setState(user.address?.state || '');
-      setPincode(user.address?.pincode || '');
+      if (typeof user.address === 'object' && user.address !== null) {
+        setStreet(user.address.street || '');
+        setCity(user.address.city || '');
+        setState(user.address.state || '');
+        setPincode(user.address.pincode || '');
+      } else if (typeof user.address === 'string') {
+        setStreet(user.address || '');
+        setCity('');
+        setState('');
+        setPincode('');
+      }
     }
   }, [user]);
 

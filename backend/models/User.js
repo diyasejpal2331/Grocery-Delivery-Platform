@@ -28,8 +28,13 @@ const userSchema = new mongoose.Schema(
         },
 
         address: {
-            type: String,
-            default: ""
+            type: mongoose.Schema.Types.Mixed,
+            default: () => ({
+                street: "",
+                city: "",
+                state: "",
+                pincode: ""
+            })
         },
 
         phone: {

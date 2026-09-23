@@ -887,8 +887,10 @@ export const UserDashboard: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.85rem', color: '#334155', lineHeight: 1.4 }}>
               <MapPin size={16} color="var(--primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
               <span>
-                {user?.address?.street
+                {typeof user?.address === 'object' && user?.address && user.address.street
                   ? `${user.address.street}, ${user.address.city || ''} ${user.address.pincode ? `- ${user.address.pincode}` : ''}`
+                  : typeof user?.address === 'string' && user.address.trim()
+                  ? user.address
                   : '45 Green Garden Layout, Bangalore - 560034'}
               </span>
             </div>

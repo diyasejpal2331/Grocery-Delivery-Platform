@@ -1,33 +1,15 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Tag, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 
 export const CartSummary: React.FC = () => {
   const { totalAmount, totalItems } = useCart();
   const navigate = useNavigate();
-  const [promoCode, setPromoCode] = useState('');
-  const [discount, setDiscount] = useState(0);
-  const [promoMessage, setPromoMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
   const deliveryFee = totalAmount > 500 || totalAmount === 0 ? 0 : 40;
   const tax = Math.round(totalAmount * 0.05); // 5% GST
-  const grandTotal = Math.max(0, totalAmount + deliveryFee + tax - discount);
-
-  const applyPromo = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (promoCode.toUpperCase() === 'FRESH50') {
-      setDiscount(50);
-      setPromoMessage({ text: '₹50 promo discount applied!', isError: false });
-    } else if (promoCode.toUpperCase() === 'ORGANIC10') {
-      const calcDiscount = Math.round(totalAmount * 0.1);
-      setDiscount(calcDiscount);
-      setPromoMessage({ text: `10% discount (₹${calcDiscount}) applied!`, isError: false });
-    } else {
-      setDiscount(0);
-      setPromoMessage({ text: 'Invalid promo code. Try FRESH50 or ORGANIC10', isError: true });
-    }
-  };
+  const grandTotal = totalAmount + deliveryFee + tax;
 
   return (
     <div
@@ -63,37 +45,7 @@ export const CartSummary: React.FC = () => {
           <span>Estimated GST (5%)</span>
           <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>₹{tax}</span>
         </div>
-
-        {discount > 0 && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--primary-hover)' }}>
-            <span>Promo Discount</span>
-            <span style={{ fontWeight: 700 }}>-₹{discount}</span>
-          </div>
-        )}
       </div>
-
-      {/* Promo Code Input */}
-      <form onSubmit={applyPromo} style={{ display: 'flex', gap: '0.5rem' }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <Tag size={16} style={{ position: 'absolute', left: '10px', top: '10px', color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            placeholder="Promo code (FRESH50)"
-            value={promoCode}
-            onChange={(e) => setPromoCode(e.target.value)}
-            className="form-control"
-            style={{ paddingLeft: '2.2rem', fontSize: '0.85rem', textTransform: 'uppercase' }}
-          />
-        </div>
-        <button type="submit" className="btn btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
-          Apply
-        </button>
-      </form>
-      {promoMessage && (
-        <span style={{ fontSize: '0.78rem', color: promoMessage.isError ? 'var(--danger)' : 'var(--primary-hover)', fontWeight: 600 }}>
-          {promoMessage.text}
-        </span>
-      )}
 
       <div style={{ borderTop: '2px dashed var(--border)', paddingTop: '1rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>

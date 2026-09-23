@@ -65,11 +65,29 @@ const registerUser = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        let userAddress = { street: "", city: "", state: "", pincode: "" };
+        if (address && typeof address === "object") {
+            const pincodeStr = address.pincode ? String(address.pincode).trim() : "";
+            if (pincodeStr && !/^[0-9]{6}$/.test(pincodeStr)) {
+                return res.status(400).json({
+                    message: "Please enter a valid 6-digit postal pincode."
+                });
+            }
+            userAddress = {
+                street: address.street ? String(address.street).trim() : "",
+                city: address.city ? String(address.city).trim() : "",
+                state: address.state ? String(address.state).trim() : "",
+                pincode: pincodeStr
+            };
+        } else if (typeof address === "string" && address.trim()) {
+            userAddress = address.trim();
+        }
+
         const user = await User.create({
             name: trimmedName,
             email: trimmedEmail,
             password: hashedPassword,
-            address: address || "",
+            address: userAddress,
             phone: phone ? phone.trim() : ""
         });
 
@@ -81,6 +99,7 @@ const registerUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                address: user.address,
                 phone: user.phone
             },
             token: generateToken(user._id)
@@ -139,6 +158,7 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                address: user.address,
                 phone: user.phone
             },
             token: generateToken(user._id)
@@ -193,7 +213,24 @@ const updateProfile = async (req, res) => {
             user.email = trimmedEmail;
         }
 
-        user.address = req.body.address || user.address;
+        if (req.body.address !== undefined) {
+            if (req.body.address && typeof req.body.address === "object") {
+                const pincodeStr = req.body.address.pincode ? String(req.body.address.pincode).trim() : "";
+                if (pincodeStr && !/^[0-9]{6}$/.test(pincodeStr)) {
+                    return res.status(400).json({
+                        message: "Please enter a valid 6-digit postal pincode."
+                    });
+                }
+                user.address = {
+                    street: req.body.address.street ? String(req.body.address.street).trim() : "",
+                    city: req.body.address.city ? String(req.body.address.city).trim() : "",
+                    state: req.body.address.state ? String(req.body.address.state).trim() : "",
+                    pincode: pincodeStr
+                };
+            } else if (typeof req.body.address === "string") {
+                user.address = req.body.address.trim();
+            }
+        }
 
         if (req.body.password) {
             if (req.body.password.length < 6) {

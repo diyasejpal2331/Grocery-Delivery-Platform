@@ -60,13 +60,13 @@ export const Navbar: React.FC = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', fontSize: '0.78rem', opacity: 0.95 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <MapPin size={13} /> 12980 Mignal Hill Road California, NA, 20110
+            <MapPin size={13} /> Megha Heights, Ahmedabad, Gujarat - 380015
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Mail size={13} /> example@mail.com
+            <Mail size={13} /> support@freshmart.com
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-            <Phone size={13} /> +8100-12345-1234
+            <Phone size={13} /> +91 98765 43210
           </span>
         </div>
       </div>

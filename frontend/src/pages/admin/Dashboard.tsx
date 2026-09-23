@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  DollarSign,
+  IndianRupee,
   ShoppingBag,
   Package,
   Users as UsersIcon,
@@ -146,7 +146,7 @@ export const Dashboard: React.FC = () => {
             change="+18.5%"
             changeType="positive"
             subtitle="Gross sales generated"
-            icon={DollarSign}
+            icon={IndianRupee}
             iconBgColor="#fff1f2"
             iconColor="var(--primary)"
           />

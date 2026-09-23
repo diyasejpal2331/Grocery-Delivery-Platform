@@ -98,7 +98,7 @@ export const ProductFilter: React.FC<ProductFilterProps> = ({
         <label style={{ fontSize: '0.875rem', fontWeight: 700, display: 'block', marginBottom: '0.6rem' }}>
           Price Range (₹)
         </label>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', boxSizing: 'border-box' }}>
           <input
             type="number"
             placeholder="Min"
@@ -107,7 +107,7 @@ export const ProductFilter: React.FC<ProductFilterProps> = ({
               onFilterChange({ ...filters, minPrice: e.target.value ? Number(e.target.value) : undefined })
             }
             className="form-control"
-            style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
+            style={{ width: '100%', flex: '1 1 0%', minWidth: 0, boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
           />
           <span style={{ color: 'var(--text-muted)' }}>-</span>
           <input
@@ -118,7 +118,7 @@ export const ProductFilter: React.FC<ProductFilterProps> = ({
               onFilterChange({ ...filters, maxPrice: e.target.value ? Number(e.target.value) : undefined })
             }
             className="form-control"
-            style={{ padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
+            style={{ width: '100%', flex: '1 1 0%', minWidth: 0, boxSizing: 'border-box', padding: '0.4rem 0.6rem', fontSize: '0.85rem' }}
           />
         </div>
       </div>

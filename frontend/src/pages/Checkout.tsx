@@ -15,10 +15,10 @@ export const Checkout: React.FC = () => {
   const [address, setAddress] = useState<ShippingAddress>({
     fullName: user?.name || '',
     phone: user?.phone || '',
-    street: user?.address?.street || '',
-    city: user?.address?.city || 'Bangalore',
-    state: user?.address?.state || 'Karnataka',
-    pincode: user?.address?.pincode || '560001',
+    street: typeof user?.address === 'object' && user?.address ? user.address.street || '' : typeof user?.address === 'string' ? user.address : '',
+    city: typeof user?.address === 'object' && user?.address ? user.address.city || 'Bangalore' : 'Bangalore',
+    state: typeof user?.address === 'object' && user?.address ? user.address.state || 'Karnataka' : 'Karnataka',
+    pincode: typeof user?.address === 'object' && user?.address ? user.address.pincode || '560001' : '560001',
     landmark: '',
   });
 

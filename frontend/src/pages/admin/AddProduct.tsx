@@ -370,12 +370,28 @@ export const AddProduct: React.FC = () => {
                     />
                   </div>
 
-                  <div style={{ flex: 1, minWidth: '180px' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       Product Image Preview
                     </span>
-                    <strong style={{ display: 'block', fontSize: '0.95rem', color: 'var(--secondary)', margin: '0.2rem 0' }}>
-                      {selectedFile ? selectedFile.name : image ? image.split('/').pop() : 'Product Image'}
+                    <strong
+                      title={selectedFile ? selectedFile.name : image || 'Product Image'}
+                      style={{
+                        display: 'block',
+                        fontSize: '0.95rem',
+                        color: 'var(--secondary)',
+                        margin: '0.2rem 0',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%',
+                      }}
+                    >
+                      {selectedFile
+                        ? selectedFile.name
+                        : image
+                        ? image.split('/').pop()?.split('?')[0] || 'Product Image'
+                        : 'Product Image'}
                     </strong>
                     {selectedFile && (
                       <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.75rem' }}>
@@ -496,14 +512,28 @@ export const AddProduct: React.FC = () => {
               </div>
             </div>
 
-            <div className="form-group">
-              <label>Product Description</label>
+            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+              <label style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-main)', marginBottom: '0.375rem', display: 'block' }}>
+                Product Description
+              </label>
               <textarea
                 rows={3}
                 placeholder="Freshly harvested organic produce details..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="form-control"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  fontFamily: 'inherit',
+                  fontSize: '0.95rem',
+                  lineHeight: '1.5',
+                  padding: '0.65rem 0.9rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--border)',
+                  minHeight: '90px',
+                  resize: 'vertical',
+                }}
               />
             </div>
 
